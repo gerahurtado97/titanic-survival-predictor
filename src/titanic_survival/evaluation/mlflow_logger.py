@@ -8,10 +8,8 @@ y entender las decisiones tomadas.
 
 from __future__ import annotations
 
-import json
 import logging
 from pathlib import Path
-from typing import Any
 
 import mlflow
 import mlflow.pytorch
@@ -43,7 +41,8 @@ def setup_mlflow(tracking_uri: str, experiment_name: str) -> str:
     exp = mlflow.get_experiment_by_name(experiment_name)
     logger.info(
         "MLflow configurado: experiment=%s id=%s",
-        experiment_name, exp.experiment_id,
+        experiment_name,
+        exp.experiment_id,
     )
     return exp.experiment_id
 
@@ -65,29 +64,35 @@ def log_sklearn_run(
     """
     with mlflow.start_run(run_name=run_name) as run:
         # Params: hiperparámetros del modelo
-        mlflow.log_params({
-            "model_type":    "LogisticRegression",
-            "search_method": "GridSearchCV",
-            "cv_folds":      config.get("sklearn", {}).get("search", {}).get("cv_folds", 5),
-            **{k.replace("classifier__", ""): str(v) for k, v in best_params.items()},
-        })
+        mlflow.log_params(
+            {
+                "model_type": "LogisticRegression",
+                "search_method": "GridSearchCV",
+                "cv_folds": config.get("sklearn", {}).get("search", {}).get("cv_folds", 5),
+                **{k.replace("classifier__", ""): str(v) for k, v in best_params.items()},
+            }
+        )
 
         # Métricas finales
-        mlflow.log_metrics({
-            "f1":            result.f1,
-            "auroc":         result.auroc,
-            "recall":        result.recall,
-            "precision":     result.precision,
-            "accuracy":      result.accuracy,
-            "avg_precision": result.avg_precision,
-        })
+        mlflow.log_metrics(
+            {
+                "f1": result.f1,
+                "auroc": result.auroc,
+                "recall": result.recall,
+                "precision": result.precision,
+                "accuracy": result.accuracy,
+                "avg_precision": result.avg_precision,
+            }
+        )
 
         # Tags
-        mlflow.set_tags({
-            "model_family":   "sklearn",
-            "dataset":        "titanic",
-            "validated_with": "pandera",
-        })
+        mlflow.set_tags(
+            {
+                "model_family": "sklearn",
+                "dataset": "titanic",
+                "validated_with": "pandera",
+            }
+        )
 
         # Artefacto: modelo serializado
         mlflow.log_artifact(str(model_path))
@@ -117,45 +122,52 @@ def log_pytorch_run(
 
     with mlflow.start_run(run_name=run_name) as run:
         # Params
-        mlflow.log_params({
-            "model_type":       "TitanicMLP",
-            "hidden_dims":      str(pt_cfg.get("architecture", {}).get("hidden_dims")),
-            "activation":       pt_cfg.get("architecture", {}).get("activation", "gelu"),
-            "optimizer":        pt_cfg.get("optimizer", "AdamW"),
-            "scheduler":        pt_cfg.get("scheduler", {}).get("name", "CosineAnnealingLR"),
-            "lr":               train_cfg.get("learning_rate", 1e-3),
-            "weight_decay":     train_cfg.get("weight_decay", 1e-2),
-            "epochs":           train_cfg.get("epochs", 80),
-            "batch_size":       train_cfg.get("batch_size", 32),
-            "pos_weight_factor": train_cfg.get("pos_weight_factor", 2.0),
-            "clip_norm":        train_cfg.get("clip_norm", 1.0),
-            "early_stopping_patience": config.get("pytorch", {}).get(
-                "early_stopping", {}).get("patience", 10),
-        })
+        mlflow.log_params(
+            {
+                "model_type": "TitanicMLP",
+                "hidden_dims": str(pt_cfg.get("architecture", {}).get("hidden_dims")),
+                "activation": pt_cfg.get("architecture", {}).get("activation", "gelu"),
+                "optimizer": pt_cfg.get("optimizer", "AdamW"),
+                "scheduler": pt_cfg.get("scheduler", {}).get("name", "CosineAnnealingLR"),
+                "lr": train_cfg.get("learning_rate", 1e-3),
+                "weight_decay": train_cfg.get("weight_decay", 1e-2),
+                "epochs": train_cfg.get("epochs", 80),
+                "batch_size": train_cfg.get("batch_size", 32),
+                "pos_weight_factor": train_cfg.get("pos_weight_factor", 2.0),
+                "clip_norm": train_cfg.get("clip_norm", 1.0),
+                "early_stopping_patience": config.get("pytorch", {})
+                .get("early_stopping", {})
+                .get("patience", 10),
+            }
+        )
 
         # Métricas por época
         for epoch, (tl, vl) in enumerate(
-            zip(history["train_loss"], history["val_loss"]), start=1
+            zip(history["train_loss"], history["val_loss"], strict=False), start=1
         ):
             mlflow.log_metrics({"train_loss": tl, "val_loss": vl}, step=epoch)
 
         # Métricas finales
-        mlflow.log_metrics({
-            "f1":            result.f1,
-            "auroc":         result.auroc,
-            "recall":        result.recall,
-            "precision":     result.precision,
-            "accuracy":      result.accuracy,
-            "avg_precision": result.avg_precision,
-            "best_epoch":    history.get("best_epoch", -1),
-        })
+        mlflow.log_metrics(
+            {
+                "f1": result.f1,
+                "auroc": result.auroc,
+                "recall": result.recall,
+                "precision": result.precision,
+                "accuracy": result.accuracy,
+                "avg_precision": result.avg_precision,
+                "best_epoch": history.get("best_epoch", -1),
+            }
+        )
 
-        mlflow.set_tags({
-            "model_family":   "pytorch",
-            "dataset":        "titanic",
-            "validated_with": "pandera",
-            "device":         "cuda" if history.get("use_amp") else "cpu",
-        })
+        mlflow.set_tags(
+            {
+                "model_family": "pytorch",
+                "dataset": "titanic",
+                "validated_with": "pandera",
+                "device": "cuda" if history.get("use_amp") else "cpu",
+            }
+        )
 
         # Artefacto: modelo serializado
         mlflow.log_artifact(str(model_path))

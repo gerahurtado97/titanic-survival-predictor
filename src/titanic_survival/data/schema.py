@@ -64,7 +64,7 @@ RAW_SCHEMA = DataFrameSchema(
                 Check.greater_than(0, error="Edad debe ser > 0"),
                 Check.less_than_or_equal_to(100, error="Edad no puede superar 100"),
             ],
-            nullable=True,   # 177 nulos — se imputarán en el preprocesador
+            nullable=True,  # 177 nulos — se imputarán en el preprocesador
         ),
         "SibSp": Column(
             int,
@@ -82,11 +82,11 @@ RAW_SCHEMA = DataFrameSchema(
             checks=Check.greater_than_or_equal_to(0, error="Fare no puede ser negativo"),
             nullable=False,
         ),
-        "Cabin": Column(str, nullable=True),   # 77% nulos — esperado
+        "Cabin": Column(str, nullable=True),  # 77% nulos — esperado
         "Embarked": Column(
             str,
             checks=Check.isin(["C", "Q", "S"], error="Embarked debe ser C, Q o S"),
-            nullable=True,   # 2 nulos
+            nullable=True,  # 2 nulos
         ),
     },
     checks=[
@@ -101,7 +101,7 @@ RAW_SCHEMA = DataFrameSchema(
             error="Familia de más de 11 personas — verificar datos",
         ),
     ],
-    strict=False,   # Permite columnas extra sin fallar
+    strict=False,  # Permite columnas extra sin fallar
     coerce=False,
     name="TitanicRawSchema",
 )
@@ -113,33 +113,53 @@ RAW_SCHEMA = DataFrameSchema(
 
 ENGINEERED_SCHEMA = DataFrameSchema(
     columns={
-        "Age":          Column(float, nullable=True),
-        "Fare":         Column(float, checks=Check.greater_than_or_equal_to(0), nullable=False),
-        "Pclass":       Column(int,   checks=Check.isin([1, 2, 3]), nullable=False),
-        "SibSp":        Column(int,   checks=Check.greater_than_or_equal_to(0), nullable=False),
-        "Parch":        Column(int,   checks=Check.greater_than_or_equal_to(0), nullable=False),
-        "FamilySize":   Column(int,   checks=[
-            Check.greater_than_or_equal_to(1),
-            Check.less_than_or_equal_to(20),
-        ], nullable=False),
-        "IsAlone":      Column(int,   checks=Check.isin([0, 1]), nullable=False),
-        "HasCabin":     Column(int,   checks=Check.isin([0, 1]), nullable=False),
+        "Age": Column(float, nullable=True),
+        "Fare": Column(float, checks=Check.greater_than_or_equal_to(0), nullable=False),
+        "Pclass": Column(int, checks=Check.isin([1, 2, 3]), nullable=False),
+        "SibSp": Column(int, checks=Check.greater_than_or_equal_to(0), nullable=False),
+        "Parch": Column(int, checks=Check.greater_than_or_equal_to(0), nullable=False),
+        "FamilySize": Column(
+            int,
+            checks=[
+                Check.greater_than_or_equal_to(1),
+                Check.less_than_or_equal_to(20),
+            ],
+            nullable=False,
+        ),
+        "IsAlone": Column(int, checks=Check.isin([0, 1]), nullable=False),
+        "HasCabin": Column(int, checks=Check.isin([0, 1]), nullable=False),
         "FarePerPerson": Column(float, checks=Check.greater_than_or_equal_to(0), nullable=False),
-        "FareLog":      Column(float, checks=Check.greater_than_or_equal_to(0), nullable=False),
-        "Sex":          Column(str,   checks=Check.isin(["male", "female"]), nullable=False),
-        "Embarked":     Column(str,   checks=Check.isin(["C", "Q", "S"]), nullable=True),
-        "Title":        Column(str,   checks=Check.isin(
-            ["Mr", "Mrs", "Miss", "Master", "Rare", "Unknown"],
-        ), nullable=False),
-        "CabinDeck":    Column(str,   checks=Check.isin(
-            ["A", "B", "C", "D", "E", "F", "G", "U"],
-        ), nullable=False),
-        "FamilyCategory": Column(str, checks=Check.isin(
-            ["Solo", "Pequeña", "Mediana", "Grande"],
-        ), nullable=False),
-        "AgeBin":       Column(str,   checks=Check.isin(
-            ["Niño", "Adolescente", "Adulto_Joven", "Adulto", "Mayor", "Desconocido"],
-        ), nullable=False),
+        "FareLog": Column(float, checks=Check.greater_than_or_equal_to(0), nullable=False),
+        "Sex": Column(str, checks=Check.isin(["male", "female"]), nullable=False),
+        "Embarked": Column(str, checks=Check.isin(["C", "Q", "S"]), nullable=True),
+        "Title": Column(
+            str,
+            checks=Check.isin(
+                ["Mr", "Mrs", "Miss", "Master", "Rare", "Unknown"],
+            ),
+            nullable=False,
+        ),
+        "CabinDeck": Column(
+            str,
+            checks=Check.isin(
+                ["A", "B", "C", "D", "E", "F", "G", "U"],
+            ),
+            nullable=False,
+        ),
+        "FamilyCategory": Column(
+            str,
+            checks=Check.isin(
+                ["Solo", "Pequeña", "Mediana", "Grande"],
+            ),
+            nullable=False,
+        ),
+        "AgeBin": Column(
+            str,
+            checks=Check.isin(
+                ["Niño", "Adolescente", "Adulto_Joven", "Adulto", "Mayor", "Desconocido"],
+            ),
+            nullable=False,
+        ),
     },
     checks=[
         # CHECK cross-column: IsAlone consistente con FamilySize

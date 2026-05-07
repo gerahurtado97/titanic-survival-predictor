@@ -42,10 +42,10 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> None:
-    args   = parse_args()
+    args = parse_args()
     config = load_model_config(args.config)
 
-    seed      = config["project"]["seed"]
+    seed = config["project"]["seed"]
     np.random.seed(seed)
 
     # ── 1. Cargar datos procesados
@@ -60,10 +60,18 @@ def main() -> None:
 
     # ── 2. Split estratificado 70/15/15
     X_tv, X_test, y_tv, y_test = train_test_split(
-        X, y, test_size=0.15, stratify=y, random_state=seed,
+        X,
+        y,
+        test_size=0.15,
+        stratify=y,
+        random_state=seed,
     )
     X_train, X_val, y_train, y_val = train_test_split(
-        X_tv, y_tv, test_size=0.15 / 0.85, stratify=y_tv, random_state=seed,
+        X_tv,
+        y_tv,
+        test_size=0.15 / 0.85,
+        stratify=y_tv,
+        random_state=seed,
     )
     logger.info("Train=%d | Val=%d | Test=%d", len(X_train), len(X_val), len(X_test))
 

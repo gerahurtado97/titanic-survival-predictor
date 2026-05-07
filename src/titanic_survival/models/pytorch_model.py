@@ -32,6 +32,7 @@ logger = logging.getLogger(__name__)
 # Dataset personalizado
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 class TitanicDataset(Dataset):
     """
     Dataset PyTorch para el Titanic.
@@ -63,6 +64,7 @@ class TitanicDataset(Dataset):
 # ─────────────────────────────────────────────────────────────────────────────
 # Arquitectura del MLP
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 class TitanicMLP(nn.Module):
     """
@@ -103,7 +105,7 @@ class TitanicMLP(nn.Module):
 
         layers: list[nn.Module] = []
         prev = in_dim
-        for h, p in zip(hidden_dims, dropouts):
+        for h, p in zip(hidden_dims, dropouts, strict=False):
             layers += [
                 nn.Linear(prev, h),
                 nn.BatchNorm1d(h),
@@ -112,7 +114,7 @@ class TitanicMLP(nn.Module):
             ]
             prev = h
 
-        layers.append(nn.Linear(prev, 1))   # logit de salida
+        layers.append(nn.Linear(prev, 1))  # logit de salida
         self.net = nn.Sequential(*layers)
         self._init_weights()
 
@@ -136,6 +138,7 @@ class TitanicMLP(nn.Module):
 # Wrapper que implementa BaseModel
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 class PytorchSurvivalModel(BaseModel):
     """
     Wrapper de TitanicMLP que implementa la interfaz BaseModel.
@@ -151,10 +154,10 @@ class PytorchSurvivalModel(BaseModel):
         dropouts: tuple[float, ...] = (0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.2, 0.2, 0.2),
         device: str | None = None,
     ) -> None:
-        self.in_dim      = in_dim
+        self.in_dim = in_dim
         self.hidden_dims = hidden_dims
-        self.dropouts    = dropouts
-        self.device      = torch.device(
+        self.dropouts = dropouts
+        self.device = torch.device(
             device if device else ("cuda" if torch.cuda.is_available() else "cpu")
         )
         self._mlp: TitanicMLP | None = None
@@ -191,14 +194,16 @@ class PytorchSurvivalModel(BaseModel):
         # pos_weight para compensar desbalance + factor para maximizar Recall
         n_pos = int(y.sum())
         n_neg = len(y) - n_pos
-        pos_weight = torch.tensor(
-            [(n_neg / n_pos) * pos_weight_factor], dtype=torch.float32
-        ).to(self.device)
+        pos_weight = torch.tensor([(n_neg / n_pos) * pos_weight_factor], dtype=torch.float32).to(
+            self.device
+        )
 
         criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
         optimizer = torch.optim.AdamW(self._mlp.parameters(), lr=lr, weight_decay=weight_decay)
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-            optimizer, T_max=epochs, eta_min=1e-6,
+            optimizer,
+            T_max=epochs,
+            eta_min=1e-6,
         )
 
         # Split train/val interno (80/20)
@@ -209,10 +214,11 @@ class PytorchSurvivalModel(BaseModel):
         use_pin = self.device.type == "cuda"
         g = torch.Generator().manual_seed(seed)
         train_ds = TitanicDataset(X[tr_idx], y[tr_idx])
-        val_ds   = TitanicDataset(X[val_idx], y[val_idx])
-        train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True,
-                                  generator=g, pin_memory=use_pin)
-        val_loader   = DataLoader(val_ds, batch_size=256, shuffle=False, pin_memory=use_pin)
+        val_ds = TitanicDataset(X[val_idx], y[val_idx])
+        train_loader = DataLoader(
+            train_ds, batch_size=batch_size, shuffle=True, generator=g, pin_memory=use_pin
+        )
+        val_loader = DataLoader(val_ds, batch_size=256, shuffle=False, pin_memory=use_pin)
 
         history = fit(
             model=self._mlp,
@@ -245,7 +251,7 @@ class PytorchSurvivalModel(BaseModel):
         self._mlp.eval()
         with torch.no_grad():
             logits = self._mlp(X_t)
-            proba  = torch.sigmoid(logits).squeeze(1).cpu().numpy()
+            proba = torch.sigmoid(logits).squeeze(1).cpu().numpy()
         return proba
 
     def save(self, path: str | Path) -> None:
@@ -253,17 +259,20 @@ class PytorchSurvivalModel(BaseModel):
         path = Path(path)
         path.parent.mkdir(parents=True, exist_ok=True)
         with path.open("wb") as fh:
-            torch.save({
-                "model_state_dict": self._mlp.state_dict(),
-                "in_dim":           self.in_dim,
-                "hidden_dims":      self.hidden_dims,
-                "dropouts":         self.dropouts,
-            }, fh)
+            torch.save(
+                {
+                    "model_state_dict": self._mlp.state_dict(),
+                    "in_dim": self.in_dim,
+                    "hidden_dims": self.hidden_dims,
+                    "dropouts": self.dropouts,
+                },
+                fh,
+            )
         size_kb = path.stat().st_size / 1024
         logger.info("Modelo PyTorch guardado: %s (%.1f KB)", path, size_kb)
 
     @classmethod
-    def load(cls, path: str | Path) -> "PytorchSurvivalModel":
+    def load(cls, path: str | Path) -> PytorchSurvivalModel:
         """Carga un modelo PyTorch desde disco."""
         path = Path(path)
         ckpt = torch.load(path, map_location="cpu", weights_only=False)
@@ -273,7 +282,9 @@ class PytorchSurvivalModel(BaseModel):
             dropouts=tuple(ckpt["dropouts"]),
         )
         instance._mlp = TitanicMLP(
-            instance.in_dim, instance.hidden_dims, instance.dropouts,
+            instance.in_dim,
+            instance.hidden_dims,
+            instance.dropouts,
         )
         instance._mlp.load_state_dict(ckpt["model_state_dict"])
         instance._mlp.to(instance.device)

@@ -37,15 +37,15 @@ def train_one_epoch(
     amp_dtype = torch.bfloat16 if use_amp else torch.float32
 
     for xb, yb in loader:
-        xb  = xb.to(device)
-        yb  = yb.to(device)
+        xb = xb.to(device)
+        yb = yb.to(device)
         yb_f = yb.float().unsqueeze(1)
 
         optimizer.zero_grad(set_to_none=True)
 
         with torch.amp.autocast(device_type=device.type, dtype=amp_dtype, enabled=use_amp):
             logits = model(xb)
-            loss   = criterion(logits, yb_f)
+            loss = criterion(logits, yb_f)
 
         loss.backward()
         nn.utils.clip_grad_norm_(model.parameters(), max_norm=clip_norm)
@@ -53,8 +53,8 @@ def train_one_epoch(
 
         preds = (torch.sigmoid(logits.detach()).squeeze(1) >= 0.5).long()
         n_correct += (preds == yb).sum().item()
-        n_total   += xb.size(0)
-        tot_loss  += loss.item() * xb.size(0)
+        n_total += xb.size(0)
+        tot_loss += loss.item() * xb.size(0)
 
     return {"loss": tot_loss / n_total, "acc": n_correct / n_total}
 
@@ -71,14 +71,14 @@ def evaluate(
     tot_loss, n_correct, n_total = 0.0, 0, 0
 
     for xb, yb in loader:
-        xb   = xb.to(device)
-        yb   = yb.to(device)
+        xb = xb.to(device)
+        yb = yb.to(device)
         yb_f = yb.float().unsqueeze(1)
         logits = model(xb)
-        tot_loss  += criterion(logits, yb_f).item() * xb.size(0)
+        tot_loss += criterion(logits, yb_f).item() * xb.size(0)
         preds = (torch.sigmoid(logits).squeeze(1) >= 0.5).long()
         n_correct += (preds == yb).sum().item()
-        n_total   += xb.size(0)
+        n_total += xb.size(0)
 
     return {"loss": tot_loss / n_total, "acc": n_correct / n_total}
 
@@ -110,21 +110,24 @@ def fit(
     from torch.optim.lr_scheduler import ReduceLROnPlateau
 
     history: dict[str, list] = {
-        "train_loss": [], "val_loss": [],
-        "train_acc":  [], "val_acc":  [],
+        "train_loss": [],
+        "val_loss": [],
+        "train_acc": [],
+        "val_acc": [],
         "lr": [],
     }
 
-    best_val_loss  = float("inf")
-    best_epoch     = -1
-    best_state     = None
+    best_val_loss = float("inf")
+    best_epoch = -1
+    best_state = None
     patience_count = 0
-    stop_epoch     = n_epochs
+    stop_epoch = n_epochs
 
     for epoch in range(1, n_epochs + 1):
         t0 = time.perf_counter()
-        tr = train_one_epoch(model, train_loader, optimizer, criterion, device,
-                             clip_norm=clip_norm, use_amp=use_amp)
+        tr = train_one_epoch(
+            model, train_loader, optimizer, criterion, device, clip_norm=clip_norm, use_amp=use_amp
+        )
         va = evaluate(model, val_loader, criterion, device)
         dt = time.perf_counter() - t0
 
@@ -142,24 +145,31 @@ def fit(
 
         if epoch % log_every == 0 or epoch == 1:
             logger.info(
-                "epoch %3d/%d  train_loss=%.4f  val_loss=%.4f  "
-                "val_acc=%.4f  lr=%.2e  (%.1fs)",
-                epoch, n_epochs, tr["loss"], va["loss"], va["acc"], lr, dt,
+                "epoch %3d/%d  train_loss=%.4f  val_loss=%.4f  " "val_acc=%.4f  lr=%.2e  (%.1fs)",
+                epoch,
+                n_epochs,
+                tr["loss"],
+                va["loss"],
+                va["acc"],
+                lr,
+                dt,
             )
 
         # Early stopping
         if va["loss"] < best_val_loss - min_delta:
             best_val_loss = va["loss"]
-            best_epoch    = epoch
+            best_epoch = epoch
             patience_count = 0
-            best_state    = {k: v.detach().clone() for k, v in model.state_dict().items()}
+            best_state = {k: v.detach().clone() for k, v in model.state_dict().items()}
         else:
             patience_count += 1
             if patience_count >= patience:
                 stop_epoch = epoch
                 logger.info(
                     "Early stop en epoch %d (mejor epoch=%d, val_loss=%.6f)",
-                    epoch, best_epoch, best_val_loss,
+                    epoch,
+                    best_epoch,
+                    best_val_loss,
                 )
                 break
 
@@ -169,6 +179,7 @@ def fit(
 
     history["best_epoch"] = best_epoch
     history["stop_epoch"] = stop_epoch
-    logger.info("Entrenamiento completado. Mejor epoch=%d, val_loss=%.6f",
-                best_epoch, best_val_loss)
+    logger.info(
+        "Entrenamiento completado. Mejor epoch=%d, val_loss=%.6f", best_epoch, best_val_loss
+    )
     return history

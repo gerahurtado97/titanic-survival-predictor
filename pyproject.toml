@@ -62,6 +62,9 @@ select = [
 ignore = [
     "E501",   # líneas largas — controlado por line-length
     "B008",   # llamadas a funciones en argumentos por defecto (común en ML)
+    "E402",   # imports no al inicio — necesario en scripts con sys.path.insert
+    "N803",   # argumento X en mayúscula — convención estándar en ML (X, y)
+    "N806",   # variable X en función — convención estándar en ML (X_train, etc.)
 ]
 
 [tool.ruff.lint.isort]

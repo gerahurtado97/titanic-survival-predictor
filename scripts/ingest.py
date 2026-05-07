@@ -40,11 +40,11 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> None:
-    args   = parse_args()
+    args = parse_args()
     config = load_model_config(args.config)
 
-    raw_path  = Path(config["data"]["raw_path"])
-    out_path  = Path(config["data"]["processed_path"])
+    raw_path = Path(config["data"]["raw_path"])
+    out_path = Path(config["data"]["processed_path"])
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
     # ── 1. Cargar datos crudos
@@ -61,7 +61,11 @@ def main() -> None:
     validate_engineered(features_df)
 
     # ── 5. Guardar en Parquet (más eficiente que CSV, preserva tipos)
-    out_file = out_path if out_path.suffix == ".parquet" else Path(str(out_path).rstrip("/") + "/train_fe.parquet")
+    out_file = (
+        out_path
+        if out_path.suffix == ".parquet"
+        else Path(str(out_path).rstrip("/") + "/train_fe.parquet")
+    )
     out_file.parent.mkdir(parents=True, exist_ok=True)
 
     df_fe[FEATURES + [TARGET]].to_parquet(out_file, index=False, engine="pyarrow")

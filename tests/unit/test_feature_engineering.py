@@ -7,27 +7,24 @@ Patrón AAA: Arrange / Act / Assert.
 
 from __future__ import annotations
 
-import numpy as np
+import sys
+from pathlib import Path
+
 import pandas as pd
 import pytest
 
-import sys
-from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
 from titanic_survival.features.engineering import (
-    CATEGORICAL_FEATURES,
     FEATURES,
-    NUMERIC_FEATURES,
-    TARGET,
     _extract_title,
     feature_engineering,
 )
 
-
 # ─────────────────────────────────────────────────────────────────────────────
 # Fixtures
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 @pytest.fixture()
 def sample_row() -> dict:
@@ -57,32 +54,58 @@ def sample_df(sample_row) -> pd.DataFrame:
 @pytest.fixture()
 def multi_row_df() -> pd.DataFrame:
     """DataFrame multi-fila para tests de invariantes."""
-    return pd.DataFrame([
-        {
-            "PassengerId": 1, "Survived": 0, "Pclass": 3,
-            "Name": "Braund, Mr. Owen Harris", "Sex": "male",
-            "Age": 22.0, "SibSp": 1, "Parch": 0,
-            "Ticket": "A/5 21171", "Fare": 7.25, "Cabin": None, "Embarked": "S",
-        },
-        {
-            "PassengerId": 2, "Survived": 1, "Pclass": 1,
-            "Name": "Cumings, Mrs. John Bradley", "Sex": "female",
-            "Age": 38.0, "SibSp": 1, "Parch": 0,
-            "Ticket": "PC 17599", "Fare": 71.28, "Cabin": "C85", "Embarked": "C",
-        },
-        {
-            "PassengerId": 3, "Survived": 1, "Pclass": 3,
-            "Name": "Heikkinen, Miss. Laina", "Sex": "female",
-            "Age": None,   # NaN intencional
-            "SibSp": 0, "Parch": 0,
-            "Ticket": "STON/O2.", "Fare": 7.925, "Cabin": None, "Embarked": "S",
-        },
-    ])
+    return pd.DataFrame(
+        [
+            {
+                "PassengerId": 1,
+                "Survived": 0,
+                "Pclass": 3,
+                "Name": "Braund, Mr. Owen Harris",
+                "Sex": "male",
+                "Age": 22.0,
+                "SibSp": 1,
+                "Parch": 0,
+                "Ticket": "A/5 21171",
+                "Fare": 7.25,
+                "Cabin": None,
+                "Embarked": "S",
+            },
+            {
+                "PassengerId": 2,
+                "Survived": 1,
+                "Pclass": 1,
+                "Name": "Cumings, Mrs. John Bradley",
+                "Sex": "female",
+                "Age": 38.0,
+                "SibSp": 1,
+                "Parch": 0,
+                "Ticket": "PC 17599",
+                "Fare": 71.28,
+                "Cabin": "C85",
+                "Embarked": "C",
+            },
+            {
+                "PassengerId": 3,
+                "Survived": 1,
+                "Pclass": 3,
+                "Name": "Heikkinen, Miss. Laina",
+                "Sex": "female",
+                "Age": None,  # NaN intencional
+                "SibSp": 0,
+                "Parch": 0,
+                "Ticket": "STON/O2.",
+                "Fare": 7.925,
+                "Cabin": None,
+                "Embarked": "S",
+            },
+        ]
+    )
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Tests de _extract_title
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 class TestExtractTitle:
     def test_mr(self):
@@ -97,11 +120,14 @@ class TestExtractTitle:
     def test_master(self):
         assert _extract_title("Palsson, Master. Gosta Leonard") == "Master"
 
-    @pytest.mark.parametrize("name,expected", [
-        ("Montvila, Rev. Juozas", "Rare"),
-        ("Graham, Miss. Margaret Edith", "Miss"),
-        ("Bonnell, Dr. Fortescue", "Rare"),
-    ])
+    @pytest.mark.parametrize(
+        "name,expected",
+        [
+            ("Montvila, Rev. Juozas", "Rare"),
+            ("Graham, Miss. Margaret Edith", "Miss"),
+            ("Bonnell, Dr. Fortescue", "Rare"),
+        ],
+    )
     def test_rare_and_common(self, name: str, expected: str):
         assert _extract_title(name) == expected
 
@@ -112,6 +138,7 @@ class TestExtractTitle:
 # ─────────────────────────────────────────────────────────────────────────────
 # Tests de feature_engineering
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 class TestFeatureEngineering:
     def test_returns_dataframe(self, sample_df):
@@ -144,10 +171,11 @@ class TestFeatureEngineering:
     def test_is_alone_consistency(self, multi_row_df):
         """IsAlone debe ser consistente con FamilySize en TODAS las filas."""
         result = feature_engineering(multi_row_df)
-        mask_alone     = result["FamilySize"] == 1
-        mask_is_alone  = result["IsAlone"] == 1
-        assert (mask_alone == mask_is_alone).all(), \
-            "IsAlone inconsistente con FamilySize — bug en feature_engineering()"
+        mask_alone = result["FamilySize"] == 1
+        mask_is_alone = result["IsAlone"] == 1
+        assert (
+            mask_alone == mask_is_alone
+        ).all(), "IsAlone inconsistente con FamilySize — bug en feature_engineering()"
 
     def test_fare_log_non_negative(self, multi_row_df):
         """FareLog = log1p(Fare) debe ser >= 0 siempre que Fare >= 0."""
@@ -181,12 +209,24 @@ class TestFeatureEngineering:
 
     def test_age_bin_nino(self):
         """Edad 10 → AgeBin='Niño'."""
-        row = pd.DataFrame([{
-            "PassengerId": 99, "Survived": 1, "Pclass": 1,
-            "Name": "Test, Master. Kid", "Sex": "male", "Age": 10.0,
-            "SibSp": 0, "Parch": 2, "Ticket": "T123", "Fare": 50.0,
-            "Cabin": None, "Embarked": "S",
-        }])
+        row = pd.DataFrame(
+            [
+                {
+                    "PassengerId": 99,
+                    "Survived": 1,
+                    "Pclass": 1,
+                    "Name": "Test, Master. Kid",
+                    "Sex": "male",
+                    "Age": 10.0,
+                    "SibSp": 0,
+                    "Parch": 2,
+                    "Ticket": "T123",
+                    "Fare": 50.0,
+                    "Cabin": None,
+                    "Embarked": "S",
+                }
+            ]
+        )
         result = feature_engineering(row)
         assert result.iloc[0]["AgeBin"] == "Niño"
 
@@ -196,20 +236,36 @@ class TestFeatureEngineering:
         result = feature_engineering(sample_df)
         assert result.iloc[0]["FamilyCategory"] == "Pequeña"
 
-    @pytest.mark.parametrize("sibsp,parch,expected_cat", [
-        (0, 0, "Solo"),
-        (1, 0, "Pequeña"),
-        (2, 0, "Pequeña"),
-        (3, 0, "Mediana"),
-        (4, 1, "Grande"),
-    ])
+    @pytest.mark.parametrize(
+        "sibsp,parch,expected_cat",
+        [
+            (0, 0, "Solo"),
+            (1, 0, "Pequeña"),
+            (2, 0, "Pequeña"),
+            (3, 0, "Mediana"),
+            (4, 1, "Grande"),
+        ],
+    )
     def test_family_category_parametrize(self, sibsp: int, parch: int, expected_cat: str):
-        row = pd.DataFrame([{
-            "PassengerId": 1, "Survived": 0, "Pclass": 2,
-            "Name": "Test, Mr. User", "Sex": "male", "Age": 30.0,
-            "SibSp": sibsp, "Parch": parch, "Ticket": "T1", "Fare": 15.0,
-            "Cabin": None, "Embarked": "S",
-        }])
+        row = pd.DataFrame(
+            [
+                {
+                    "PassengerId": 1,
+                    "Survived": 0,
+                    "Pclass": 2,
+                    "Name": "Test, Mr. User",
+                    "Sex": "male",
+                    "Age": 30.0,
+                    "SibSp": sibsp,
+                    "Parch": parch,
+                    "Ticket": "T1",
+                    "Fare": 15.0,
+                    "Cabin": None,
+                    "Embarked": "S",
+                }
+            ]
+        )
         result = feature_engineering(row)
-        assert result.iloc[0]["FamilyCategory"] == expected_cat, \
-            f"SibSp={sibsp} Parch={parch}: esperado {expected_cat}, obtenido {result.iloc[0]['FamilyCategory']}"
+        assert (
+            result.iloc[0]["FamilyCategory"] == expected_cat
+        ), f"SibSp={sibsp} Parch={parch}: esperado {expected_cat}, obtenido {result.iloc[0]['FamilyCategory']}"
