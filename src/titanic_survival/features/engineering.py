@@ -30,10 +30,23 @@ import pandas as pd
 logger = logging.getLogger(__name__)
 
 # Títulos que se agrupan en "Rare" por baja frecuencia
-_RARE_TITLES: frozenset[str] = frozenset({
-    "Don", "Rev", "Dr", "Mme", "Ms", "Major", "Lady", "Sir",
-    "Mlle", "Col", "Capt", "the Countess", "Jonkheer",
-})
+_RARE_TITLES: frozenset[str] = frozenset(
+    {
+        "Don",
+        "Rev",
+        "Dr",
+        "Mme",
+        "Ms",
+        "Major",
+        "Lady",
+        "Sir",
+        "Mlle",
+        "Col",
+        "Capt",
+        "the Countess",
+        "Jonkheer",
+    }
+)
 
 
 def _extract_title(name: str) -> str:
@@ -96,27 +109,37 @@ def feature_engineering(df: pd.DataFrame) -> pd.DataFrame:
         bins=[0, 12, 18, 35, 60, 120],
         labels=["Niño", "Adolescente", "Adulto_Joven", "Adulto", "Mayor"],
     )
-    df["AgeBin"] = (
-        age_bin.cat.add_categories("Desconocido")
-        .fillna("Desconocido")
-        .astype(str)
-    )
+    df["AgeBin"] = age_bin.cat.add_categories("Desconocido").fillna("Desconocido").astype(str)
 
     logger.debug(
         "Feature engineering completado: %d filas, %d columnas",
-        len(df), df.shape[1],
+        len(df),
+        df.shape[1],
     )
     return df
 
 
 # Columnas que entran al preprocesador sklearn
 NUMERIC_FEATURES: list[str] = [
-    "Pclass", "Age", "SibSp", "Parch", "Fare",
-    "FamilySize", "IsAlone", "HasCabin", "FarePerPerson", "FareLog",
+    "Pclass",
+    "Age",
+    "SibSp",
+    "Parch",
+    "Fare",
+    "FamilySize",
+    "IsAlone",
+    "HasCabin",
+    "FarePerPerson",
+    "FareLog",
 ]
 
 CATEGORICAL_FEATURES: list[str] = [
-    "Sex", "Embarked", "Title", "CabinDeck", "FamilyCategory", "AgeBin",
+    "Sex",
+    "Embarked",
+    "Title",
+    "CabinDeck",
+    "FamilyCategory",
+    "AgeBin",
 ]
 
 FEATURES: list[str] = NUMERIC_FEATURES + CATEGORICAL_FEATURES

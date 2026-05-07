@@ -20,11 +20,11 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-
 # ─────────────────────────────────────────────────────────────────────────────
 # Estructura de datos para resultados de evaluación
 # Dataclass en lugar de dict: campos tipados, autodocumentados
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 @dataclass
 class EvaluationResult:
@@ -57,25 +57,25 @@ class EvaluationResult:
     """
 
     model_name: str
-    accuracy:       float = 0.0
-    f1:             float = 0.0
-    auroc:          float = 0.0
-    recall:         float = 0.0
-    precision:      float = 0.0
-    avg_precision:  float = 0.0
+    accuracy: float = 0.0
+    f1: float = 0.0
+    auroc: float = 0.0
+    recall: float = 0.0
+    precision: float = 0.0
+    avg_precision: float = 0.0
     confusion_matrix: np.ndarray = field(default_factory=lambda: np.zeros((2, 2)))
     extra: dict = field(default_factory=dict)
 
     def to_dict(self) -> dict:
         """Serializa el resultado a dict para MLflow y JSON."""
         return {
-            "model_name":     self.model_name,
-            "accuracy":       round(self.accuracy, 6),
-            "f1":             round(self.f1, 6),
-            "auroc":          round(self.auroc, 6),
-            "recall":         round(self.recall, 6),
-            "precision":      round(self.precision, 6),
-            "avg_precision":  round(self.avg_precision, 6),
+            "model_name": self.model_name,
+            "accuracy": round(self.accuracy, 6),
+            "f1": round(self.f1, 6),
+            "auroc": round(self.auroc, 6),
+            "recall": round(self.recall, 6),
+            "precision": round(self.precision, 6),
+            "avg_precision": round(self.avg_precision, 6),
             **self.extra,
         }
 
@@ -93,6 +93,7 @@ class EvaluationResult:
 # ─────────────────────────────────────────────────────────────────────────────
 # Clase abstracta — contrato común para todos los modelos
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 class BaseModel(ABC):
     """
@@ -139,6 +140,6 @@ class BaseModel(ABC):
 
     @classmethod
     @abstractmethod
-    def load(cls, path: str | Path) -> "BaseModel":
+    def load(cls, path: str | Path) -> BaseModel:
         """Carga un modelo serializado desde disco."""
         ...

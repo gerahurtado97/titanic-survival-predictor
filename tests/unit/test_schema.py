@@ -24,22 +24,38 @@ from titanic_survival.data.schema import validate_raw
 @pytest.fixture()
 def valid_raw_df() -> pd.DataFrame:
     """DataFrame mínimo que pasa el schema crudo."""
-    return pd.DataFrame([
-        {
-            "PassengerId": 1, "Survived": 0, "Pclass": 3,
-            "Name": "Braund, Mr. Owen Harris", "Sex": "male",
-            "Age": 22.0, "SibSp": 1, "Parch": 0,
-            "Ticket": "A/5 21171", "Fare": 7.25,
-            "Cabin": None, "Embarked": "S",
-        },
-        {
-            "PassengerId": 2, "Survived": 1, "Pclass": 1,
-            "Name": "Cumings, Mrs. John Bradley", "Sex": "female",
-            "Age": 38.0, "SibSp": 1, "Parch": 0,
-            "Ticket": "PC 17599", "Fare": 71.28,
-            "Cabin": "C85", "Embarked": "C",
-        },
-    ])
+    return pd.DataFrame(
+        [
+            {
+                "PassengerId": 1,
+                "Survived": 0,
+                "Pclass": 3,
+                "Name": "Braund, Mr. Owen Harris",
+                "Sex": "male",
+                "Age": 22.0,
+                "SibSp": 1,
+                "Parch": 0,
+                "Ticket": "A/5 21171",
+                "Fare": 7.25,
+                "Cabin": None,
+                "Embarked": "S",
+            },
+            {
+                "PassengerId": 2,
+                "Survived": 1,
+                "Pclass": 1,
+                "Name": "Cumings, Mrs. John Bradley",
+                "Sex": "female",
+                "Age": 38.0,
+                "SibSp": 1,
+                "Parch": 0,
+                "Ticket": "PC 17599",
+                "Fare": 71.28,
+                "Cabin": "C85",
+                "Embarked": "C",
+            },
+        ]
+    )
 
 
 class TestRawSchema:
@@ -79,7 +95,7 @@ class TestRawSchema:
     def test_duplicate_passenger_id_raises(self, valid_raw_df):
         """PassengerId duplicado debe fallar el check DataFrame-level."""
         bad = valid_raw_df.copy()
-        bad.loc[1, "PassengerId"] = 1   # duplicado del id 1
+        bad.loc[1, "PassengerId"] = 1  # duplicado del id 1
         with pytest.raises(pa.errors.SchemaErrors):
             validate_raw(bad)
 
