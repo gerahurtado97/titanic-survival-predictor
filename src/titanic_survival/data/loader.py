@@ -27,6 +27,7 @@ logger = logging.getLogger(__name__)
 # Decorador @timer — registra el tiempo de ejecución de funciones críticas
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def timer(func: Any) -> Any:
     """
     Decorador que registra el tiempo de ejecución de una función.
@@ -40,6 +41,7 @@ def timer(func: Any) -> Any:
     >>> @timer
     ... def cargar_datos(ruta): ...
     """
+
     @wraps(func)
     def wrapper(*args: Any, **kwargs: Any) -> Any:
         t0 = time.perf_counter()
@@ -47,6 +49,7 @@ def timer(func: Any) -> Any:
         elapsed = time.perf_counter() - t0
         logger.info("[timer] %s completado en %.3f s", func.__name__, elapsed)
         return result
+
     return wrapper
 
 
@@ -56,17 +59,17 @@ def timer(func: Any) -> Any:
 
 TITANIC_DTYPES: dict[str, str] = {
     "PassengerId": "int64",
-    "Survived":    "int64",
-    "Pclass":      "int64",
-    "Name":        "string",
-    "Sex":         "string",
-    "Age":         "float64",
-    "SibSp":       "int64",
-    "Parch":       "int64",
-    "Ticket":      "string",
-    "Fare":        "float64",
-    "Cabin":       "string",
-    "Embarked":    "string",
+    "Survived": "int64",
+    "Pclass": "int64",
+    "Name": "string",
+    "Sex": "string",
+    "Age": "float64",
+    "SibSp": "int64",
+    "Parch": "int64",
+    "Ticket": "string",
+    "Fare": "float64",
+    "Cabin": "string",
+    "Embarked": "string",
 }
 
 
@@ -111,10 +114,12 @@ def load_raw(path: str | Path) -> pd.DataFrame:
         na_values=["", "NA", "N/A", "nan", "NaN"],
     )
 
-    # Convertir columnas string correctamente (pandas StringDtype es más seguro que object)
+    # Convertir columnas string a object (no StringDtype) para compatibilidad con sklearn
+    # pandas StringDtype usa pd.NA que causa TypeError en SimpleImputer de sklearn
+    # object dtype usa np.nan que sklearn maneja correctamente
     for col in ["Name", "Sex", "Ticket", "Cabin", "Embarked"]:
         if col in df.columns:
-            df[col] = df[col].astype("string")
+            df[col] = df[col].astype(object)
 
     logger.info(
         "Dataset cargado: %d filas × %d columnas | nulos: %d",
