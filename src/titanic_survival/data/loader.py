@@ -114,10 +114,12 @@ def load_raw(path: str | Path) -> pd.DataFrame:
         na_values=["", "NA", "N/A", "nan", "NaN"],
     )
 
-    # Convertir columnas string correctamente (pandas StringDtype es más seguro que object)
+    # Convertir columnas string a object (no StringDtype) para compatibilidad con sklearn
+    # pandas StringDtype usa pd.NA que causa TypeError en SimpleImputer de sklearn
+    # object dtype usa np.nan que sklearn maneja correctamente
     for col in ["Name", "Sex", "Ticket", "Cabin", "Embarked"]:
         if col in df.columns:
-            df[col] = df[col].astype("string")
+            df[col] = df[col].astype(object)
 
     logger.info(
         "Dataset cargado: %d filas × %d columnas | nulos: %d",

@@ -1,0 +1,53 @@
+# Datos y modelos (pesados — se versionan con DVC, no con Git)
+data/raw/
+data/processed/
+models/
+*.pkl
+*.pt
+*.joblib
+*.parquet
+
+# Secretos — NUNCA en Git
+.env
+*.env.local
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyc
+.venv/
+venv/
+env/
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Jupyter / notebooks
+.ipynb_checkpoints/
+
+# MLflow
+mlruns/
+mlartifacts/
+
+# DVC temporales
+.dvc/tmp/
+.dvc/cache/
+
+# OS
+.DS_Store
+Thumbs.db
+*.swp
+
+# IDEs
+.vscode/
+.idea/
+
+# Testing
+.coverage
+htmlcov/
+.pytest_cache/
+
+# DVC cache (solo va el .dvc/config y los .dvc tracking files)
+.dvc/cache/
+.dvc/tmp/
