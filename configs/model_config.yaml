@@ -1,0 +1,82 @@
+# ─────────────────────────────────────────────────────────────
+# Configuración centralizada del pipeline ML
+# Los hiperparámetros viven AQUÍ, no hardcodeados en el código
+# ─────────────────────────────────────────────────────────────
+
+project:
+  name: titanic-survival-predictor
+  version: "0.1.0"
+  seed: 42
+
+data:
+  raw_path: data/raw/train.csv
+  processed_path: data/processed/train_fe.parquet
+  test_size: 0.20
+  val_size: 0.15        # fracción del train set para validación
+  stratify: true
+
+features:
+  numeric:
+    - Pclass
+    - Age
+    - SibSp
+    - Parch
+    - Fare
+    - FamilySize
+    - IsAlone
+    - HasCabin
+    - FarePerPerson
+    - FareLog
+  categorical:
+    - Sex
+    - Embarked
+    - Title
+    - CabinDeck
+    - FamilyCategory
+    - AgeBin
+
+sklearn:
+  model: LogisticRegression
+  hyperparameters:
+    C: 1.0
+    max_iter: 2000
+    class_weight: balanced
+    solver: lbfgs
+    penalty: l2
+  search:
+    method: GridSearchCV
+    cv_folds: 5
+    scoring: f1
+    param_grid:
+      C: [0.01, 0.1, 1.0, 10.0]
+      penalty: [l2]
+      solver: [lbfgs, liblinear]
+  output_path: models/logistic_regression.joblib
+
+pytorch:
+  architecture:
+    hidden_dims: [256, 256, 256, 256, 128, 128, 128, 64, 32]
+    dropouts: [0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.2, 0.2, 0.2]
+    activation: gelu
+  training:
+    epochs: 80
+    batch_size: 32
+    learning_rate: 0.001
+    weight_decay: 0.01
+    pos_weight_factor: 2.0
+    clip_norm: 1.0
+    use_amp: true
+  optimizer: AdamW
+  scheduler:
+    name: CosineAnnealingLR
+    eta_min: 0.000001
+  early_stopping:
+    patience: 10
+    min_delta: 0.0001
+    mode: min
+    restore_best: true
+  output_path: models/mlp_best.pt
+
+mlflow:
+  tracking_uri: "file:./mlruns"
+  experiment_name: titanic-survival-predictor

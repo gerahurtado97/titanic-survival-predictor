@@ -1,0 +1,36 @@
+stages:
+  ingest:
+    cmd: python scripts/ingest.py
+    deps:
+      - scripts/ingest.py
+      - data/raw/train.csv
+    outs:
+      - data/processed/train_fe.parquet
+
+  train_sklearn:
+    cmd: python scripts/train_sklearn.py
+    deps:
+      - scripts/train_sklearn.py
+      - data/processed/train_fe.parquet
+      - configs/model_config.yaml
+      - src/titanic_survival/features/engineering.py
+      - src/titanic_survival/models/sklearn_model.py
+    outs:
+      - models/logistic_regression.joblib
+    metrics:
+      - models/metrics_sklearn.json:
+          cache: false
+
+  train_pytorch:
+    cmd: python scripts/train_pytorch.py
+    deps:
+      - scripts/train_pytorch.py
+      - data/processed/train_fe.parquet
+      - configs/model_config.yaml
+      - src/titanic_survival/models/pytorch_model.py
+      - src/titanic_survival/models/trainer.py
+    outs:
+      - models/mlp_best.pt
+    metrics:
+      - models/metrics_pytorch.json:
+          cache: false
