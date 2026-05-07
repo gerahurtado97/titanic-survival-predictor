@@ -53,7 +53,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> None:
-    args   = parse_args()
+    args = parse_args()
     config = load_model_config(args.config)
 
     seed = config["project"]["seed"]
@@ -72,39 +72,54 @@ def main() -> None:
 
     # ── 2. Split 70/15/15
     X_tv, X_test, y_tv, y_test = train_test_split(
-        X, y, test_size=0.15, stratify=y, random_state=seed,
+        X,
+        y,
+        test_size=0.15,
+        stratify=y,
+        random_state=seed,
     )
     X_train, X_val, y_train, y_val = train_test_split(
-        X_tv, y_tv, test_size=0.15 / 0.85, stratify=y_tv, random_state=seed,
+        X_tv,
+        y_tv,
+        test_size=0.15 / 0.85,
+        stratify=y_tv,
+        random_state=seed,
     )
     logger.info("Train=%d | Val=%d | Test=%d", len(X_train), len(X_val), len(X_test))
 
     # ── 3. Preprocesador sklearn (ajustado SOLO en train)
-    num_pipe = SKPipeline([
-        ("imputer", SimpleImputer(strategy="median")),
-        ("scaler",  StandardScaler()),
-    ])
-    cat_pipe = SKPipeline([
-        ("imputer", SimpleImputer(strategy="most_frequent")),
-        ("ohe",     OneHotEncoder(handle_unknown="ignore", sparse_output=False)),
-    ])
-    preprocessor = ColumnTransformer([
-        ("num", num_pipe, NUMERIC_FEATURES),
-        ("cat", cat_pipe, CATEGORICAL_FEATURES),
-    ], remainder="drop")
+    num_pipe = SKPipeline(
+        [
+            ("imputer", SimpleImputer(strategy="median")),
+            ("scaler", StandardScaler()),
+        ]
+    )
+    cat_pipe = SKPipeline(
+        [
+            ("imputer", SimpleImputer(strategy="most_frequent")),
+            ("ohe", OneHotEncoder(handle_unknown="ignore", sparse_output=False)),
+        ]
+    )
+    preprocessor = ColumnTransformer(
+        [
+            ("num", num_pipe, NUMERIC_FEATURES),
+            ("cat", cat_pipe, CATEGORICAL_FEATURES),
+        ],
+        remainder="drop",
+    )
 
     X_train_np = preprocessor.fit_transform(X_train)
-    X_val_np   = preprocessor.transform(X_val)
-    X_test_np  = preprocessor.transform(X_test)
+    X_val_np = preprocessor.transform(X_val)
+    X_test_np = preprocessor.transform(X_test)
 
     in_dim = X_train_np.shape[1]
     logger.info("IN_DIM=%d features después del preprocesamiento", in_dim)
 
     # ── 4. Configurar y entrenar
-    pt_cfg   = config["pytorch"]
-    arch     = pt_cfg["architecture"]
+    pt_cfg = config["pytorch"]
+    arch = pt_cfg["architecture"]
     train_cfg = pt_cfg["training"]
-    use_amp  = args.amp and torch.cuda.is_available()
+    use_amp = args.amp and torch.cuda.is_available()
 
     model = PytorchSurvivalModel(
         in_dim=in_dim,
@@ -143,6 +158,7 @@ def main() -> None:
 
     # También guardar el preprocesador para usarlo en la app
     import joblib
+
     prep_path = out_path.parent / "pytorch_preprocessor.joblib"
     with prep_path.open("wb") as fh:
         joblib.dump(preprocessor, fh)

@@ -28,20 +28,38 @@ def device() -> torch.device:
 @pytest.fixture()
 def minimal_raw_df() -> pd.DataFrame:
     """DataFrame mínimo válido del Titanic para tests rápidos."""
-    return pd.DataFrame([
-        {
-            "PassengerId": 1, "Survived": 0, "Pclass": 3,
-            "Name": "Braund, Mr. Owen Harris", "Sex": "male",
-            "Age": 22.0, "SibSp": 1, "Parch": 0,
-            "Ticket": "A/5", "Fare": 7.25, "Cabin": None, "Embarked": "S",
-        },
-        {
-            "PassengerId": 2, "Survived": 1, "Pclass": 1,
-            "Name": "Cumings, Mrs. John B.", "Sex": "female",
-            "Age": 38.0, "SibSp": 1, "Parch": 0,
-            "Ticket": "PC 17599", "Fare": 71.28, "Cabin": "C85", "Embarked": "C",
-        },
-    ])
+    return pd.DataFrame(
+        [
+            {
+                "PassengerId": 1,
+                "Survived": 0,
+                "Pclass": 3,
+                "Name": "Braund, Mr. Owen Harris",
+                "Sex": "male",
+                "Age": 22.0,
+                "SibSp": 1,
+                "Parch": 0,
+                "Ticket": "A/5",
+                "Fare": 7.25,
+                "Cabin": None,
+                "Embarked": "S",
+            },
+            {
+                "PassengerId": 2,
+                "Survived": 1,
+                "Pclass": 1,
+                "Name": "Cumings, Mrs. John B.",
+                "Sex": "female",
+                "Age": 38.0,
+                "SibSp": 1,
+                "Parch": 0,
+                "Ticket": "PC 17599",
+                "Fare": 71.28,
+                "Cabin": "C85",
+                "Embarked": "C",
+            },
+        ]
+    )
 
 
 @pytest.fixture()

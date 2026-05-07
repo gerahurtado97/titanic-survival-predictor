@@ -24,7 +24,7 @@ import pandas as pd
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import GridSearchCV, StratifiedKFold, cross_val_score
+from sklearn.model_selection import GridSearchCV, StratifiedKFold
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
@@ -70,30 +70,42 @@ class SklearnSurvivalModel(BaseModel):
 
     def _build_pipeline(self) -> Pipeline:
         """Construye el Pipeline completo (preprocesador + clasificador)."""
-        numeric_transformer = Pipeline([
-            ("imputer", SimpleImputer(strategy="median")),
-            ("scaler",  StandardScaler()),
-        ])
-        categorical_transformer = Pipeline([
-            ("imputer", SimpleImputer(strategy="most_frequent")),
-            ("ohe",     OneHotEncoder(handle_unknown="ignore", sparse_output=False)),
-        ])
-        preprocessor = ColumnTransformer([
-            ("num", numeric_transformer, NUMERIC_FEATURES),
-            ("cat", categorical_transformer, CATEGORICAL_FEATURES),
-        ], remainder="drop")
+        numeric_transformer = Pipeline(
+            [
+                ("imputer", SimpleImputer(strategy="median")),
+                ("scaler", StandardScaler()),
+            ]
+        )
+        categorical_transformer = Pipeline(
+            [
+                ("imputer", SimpleImputer(strategy="most_frequent")),
+                ("ohe", OneHotEncoder(handle_unknown="ignore", sparse_output=False)),
+            ]
+        )
+        preprocessor = ColumnTransformer(
+            [
+                ("num", numeric_transformer, NUMERIC_FEATURES),
+                ("cat", categorical_transformer, CATEGORICAL_FEATURES),
+            ],
+            remainder="drop",
+        )
 
-        return Pipeline([
-            ("preprocessor", preprocessor),
-            ("classifier", LogisticRegression(
-                C=self.config.C,
-                max_iter=self.config.max_iter,
-                class_weight=self.config.class_weight,
-                solver=self.config.solver,
-                penalty=self.config.penalty,
-                random_state=self.config.random_state,
-            )),
-        ])
+        return Pipeline(
+            [
+                ("preprocessor", preprocessor),
+                (
+                    "classifier",
+                    LogisticRegression(
+                        C=self.config.C,
+                        max_iter=self.config.max_iter,
+                        class_weight=self.config.class_weight,
+                        solver=self.config.solver,
+                        penalty=self.config.penalty,
+                        random_state=self.config.random_state,
+                    ),
+                ),
+            ]
+        )
 
     def train(
         self,
@@ -117,9 +129,9 @@ class SklearnSurvivalModel(BaseModel):
 
         if param_grid is None:
             param_grid = {
-                "classifier__C":       [0.01, 0.1, 1.0, 10.0],
+                "classifier__C": [0.01, 0.1, 1.0, 10.0],
                 "classifier__penalty": ["l2"],
-                "classifier__solver":  ["lbfgs", "liblinear"],
+                "classifier__solver": ["lbfgs", "liblinear"],
             }
 
         n_combos = 1
@@ -128,7 +140,9 @@ class SklearnSurvivalModel(BaseModel):
 
         logger.info(
             "GridSearchCV: %d combinaciones × %d folds = %d fits",
-            n_combos, self.config.cv_folds, n_combos * self.config.cv_folds,
+            n_combos,
+            self.config.cv_folds,
+            n_combos * self.config.cv_folds,
         )
 
         pipeline = self._build_pipeline()
@@ -149,9 +163,9 @@ class SklearnSurvivalModel(BaseModel):
         )
         search.fit(X, y)
 
-        self._pipeline   = search.best_estimator_
+        self._pipeline = search.best_estimator_
         self._best_params = search.best_params_
-        self._cv_score   = search.best_score_
+        self._cv_score = search.best_score_
 
         logger.info(
             "Entrenamiento completado. Mejor F1 CV=%.4f | params=%s",
@@ -187,15 +201,15 @@ class SklearnSurvivalModel(BaseModel):
         # Guardar métricas de entrenamiento junto al modelo
         metrics_path = path.with_suffix(".json")
         metrics = {
-            "best_cv_f1":   round(self._cv_score, 6),
-            "best_params":  self._best_params,
+            "best_cv_f1": round(self._cv_score, 6),
+            "best_params": self._best_params,
         }
         with metrics_path.open("w") as fh:
             json.dump(metrics, fh, indent=2)
         logger.info("Métricas sklearn guardadas: %s", metrics_path)
 
     @classmethod
-    def load(cls, path: str | Path) -> "SklearnSurvivalModel":
+    def load(cls, path: str | Path) -> SklearnSurvivalModel:
         """Carga un modelo serializado desde disco."""
         path = Path(path)
         if not path.exists():

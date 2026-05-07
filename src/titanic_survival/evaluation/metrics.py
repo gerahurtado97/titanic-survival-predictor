@@ -10,6 +10,7 @@ from __future__ import annotations
 import logging
 
 import numpy as np
+import pandas as pd
 from sklearn.metrics import (
     accuracy_score,
     average_precision_score,
@@ -27,8 +28,8 @@ logger = logging.getLogger(__name__)
 
 def evaluate_model(
     model: BaseModel,
-    X: "pd.DataFrame",  # noqa: F821
-    y: "pd.Series",      # noqa: F821
+    X: pd.DataFrame,  # noqa: F821
+    y: pd.Series,  # noqa: F821
     model_name: str = "Model",
     threshold: float = 0.5,
 ) -> EvaluationResult:
@@ -53,11 +54,9 @@ def evaluate_model(
     EvaluationResult
         Resultado con todas las métricas calculadas.
     """
-    import pandas as pd
-
-    y_true  = np.asarray(y)
+    y_true = np.asarray(y)
     y_proba = model.predict_proba(X)
-    y_pred  = (y_proba >= threshold).astype(int)
+    y_pred = (y_proba >= threshold).astype(int)
 
     cm = confusion_matrix(y_true, y_pred)
 
@@ -72,12 +71,17 @@ def evaluate_model(
         confusion_matrix=cm,
     )
 
-    logger.info("Evaluación %s: F1=%.4f AUC=%.4f Recall=%.4f",
-                model_name, result.f1, result.auroc, result.recall)
+    logger.info(
+        "Evaluación %s: F1=%.4f AUC=%.4f Recall=%.4f",
+        model_name,
+        result.f1,
+        result.auroc,
+        result.recall,
+    )
     return result
 
 
-def compare_models(results: list[EvaluationResult]) -> "pd.DataFrame":
+def compare_models(results: list[EvaluationResult]) -> pd.DataFrame:
     """
     Genera una tabla comparativa de resultados de múltiples modelos.
 
@@ -91,8 +95,6 @@ def compare_models(results: list[EvaluationResult]) -> "pd.DataFrame":
     pd.DataFrame
         Tabla con una fila por modelo y columnas de métricas.
     """
-    import pandas as pd
-
     rows = [r.to_dict() for r in results]
     df = pd.DataFrame(rows).set_index("model_name")
     metric_cols = ["f1", "auroc", "recall", "precision", "accuracy", "avg_precision"]
