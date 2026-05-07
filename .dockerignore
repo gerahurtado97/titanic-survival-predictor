@@ -9,7 +9,6 @@ __pycache__/
 htmlcov/
 .coverage
 data/raw/
-data/processed/
 notebooks/
 .env
 *.env.local
