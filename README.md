@@ -117,8 +117,8 @@ HasCabin, CabinDeck, AgeBin.
 
 | Modelo | F1-Score | AUC-ROC | Recall | Precision |
 |---|---|---|---|---|
-| **Logistic Regression** | ~0.779 | ~0.862 | ~0.812 | ~0.747 |
-| **MLP PyTorch** | ~0.789 | ~0.870 | ~0.841 | ~0.741 |
+| **Logistic Regression** | ~0.752 | ~0.836 | ~0.804 | ~0.7985 |
+| **MLP PyTorch** | ~0.727 | ~0.804 | ~0.784 | ~0.776 |
 
 **Conclusión**: El MLP PyTorch supera levemente en F1 y Recall gracias a su
 capacidad de capturar interacciones no lineales entre features (Sexo × Clase × Título).
